@@ -1,0 +1,6 @@
+librosa
+tqdm
+ipython
+jupyter
+matplotlib
+requests
