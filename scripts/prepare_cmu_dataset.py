@@ -9,7 +9,7 @@ cmu_url = sys.argv[1]
 directory = sys.argv[2]
 
 words = []
-words_phonems = []
+words_phonemes = []
 with tempfile.NamedTemporaryFile() as write_file:
     r = requests.get(cmu_url, stream=True)
     for chunk in r.iter_content(chunk_size=1024):
@@ -22,7 +22,7 @@ with tempfile.NamedTemporaryFile() as write_file:
             if not line.startswith(";;;"):
                 parts = line.split()
                 words.append(parts[0])
-                words_phonems.append(parts[1:])
+                words_phonemes.append(parts[1:])
 
 unique_chars = set([ch for word in words for ch in word])
 char2id = {}
@@ -36,7 +36,7 @@ max_words_len = np.amax(words_len)
 words = [[char2id[ch] for ch in word] for word in words]
 words = np.array([np.pad(np.array(word, dtype=np.int32), (0, max_words_len - len(word)), 'constant', constant_values=(0, 0)) for word in words], dtype=np.int32)
 
-unique_phonemes = set([phone for phonems in words_phonems for phone in phonems])
+unique_phonemes = set([phone for phonemes in words_phonemes for phone in phonemes])
 unique_phonemes.add('<eos>')
 phoneme2id = {}
 id2phoneme = {}
@@ -44,13 +44,13 @@ for i, phone in enumerate(unique_phonemes):
     phoneme2id[phone] = i
     id2phoneme[i] = phone
 
-words_phonems = [phonems + ['<eos>'] for phonems in words_phonems]
-words_phonems_len = np.array([len(phonems) for phonems in words_phonems], dtype=np.int32)
-max_words_phonems_len = np.amax(words_phonems_len)
-words_phonems = [[phoneme2id[phonem] for phonem in phonems] for phonems in words_phonems]
-words_phonems = np.array([np.pad(np.array(phonems, dtype=np.int32), (0, max_words_phonems_len - len(phonems)), 'constant', constant_values=(0, 0)) for phonems in words_phonems], dtype=np.int32)
+words_phonemes = [phonemes + ['<eos>'] for phonemes in words_phonemes]
+words_phonemes_len = np.array([len(phonemes) for phonemes in words_phonemes], dtype=np.int32)
+max_words_phonemes_len = np.amax(words_phonemes_len)
+words_phonemes = [[phoneme2id[phonem] for phonem in phonemes] for phonemes in words_phonemes]
+words_phonemes = np.array([np.pad(np.array(phonemes, dtype=np.int32), (0, max_words_phonemes_len - len(phonemes)), 'constant', constant_values=(0, 0)) for phonemes in words_phonemes], dtype=np.int32)
 
-np.savez(os.path.join(directory, 'cmu_data'), X=words, X_seq_len=words_len, Y=words_phonems, Y_seq_len=words_phonems_len)
+np.savez(os.path.join(directory, 'cmu_data'), X=words, X_seq_len=words_len, Y=words_phonemes, Y_seq_len=words_phonemes_len)
 with open(os.path.join(directory, 'cmu.pkl'), 'wb') as meta_file:
     pickle.dump({
         "char2id": char2id,
